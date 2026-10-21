@@ -44,7 +44,7 @@ test('SPEC[permit-1] sessions are independent', () => {
   const a = permits.issue(identity(), 1)
   const b = permits.issue(identity({ sessionId: 'ses-b' }), 2)
   assert.equal(permits.commit(a, a.fence, identity()), 'Applied')
-  assert.equal(permits.releasePhysical('ses-b', 'msg-1'), 'Applied')
+  assert.equal(permits.releaseBeforeProvider(b, b.fence, identity({ sessionId: 'ses-b' })), 'Applied')
   assert.deepEqual(permits.lifecycle(a, a.fence), { ok: true, value: 'Committed' })
   assert.deepEqual(permits.lifecycle(b, b.fence), { ok: true, value: 'Released' })
 })
@@ -88,10 +88,10 @@ test('SPEC[permit-3] pending → released before provider excludes physical comp
   assert.equal(permits.commit(permit, permit.fence, identity()), 'Conflict')
 })
 
-test('SPEC[permit-3] pending → released by physical completion without a commit; then before-provider conflicts', () => {
+test('SPEC[permit-3] pending cannot release by physical completion without a commit', () => {
   const { permits, permit } = fresh()
-  assert.equal(permits.releasePhysical('ses-a', 'msg-1'), 'Applied')
-  assert.equal(permits.releaseBeforeProvider(permit, permit.fence, identity()), 'Conflict')
+  assert.equal(permits.releasePhysical('ses-a', 'msg-1'), 'Conflict', 'physical completion requires a prior commit')
+  assert.equal(permits.releaseBeforeProvider(permit, permit.fence, identity()), 'Applied', 'before-provider release is still legal from pending')
   assert.equal(permits.releasePhysical('nobody', 'msg-1'), 'StaleFence', 'unknown session')
 })
 

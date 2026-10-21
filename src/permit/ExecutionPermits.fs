@@ -128,7 +128,9 @@ module internal Lifecycle =
 
     let beginRelease (requested: Release) =
         function
-        | State.Pending -> Decision.Transitioned(State.Releasing requested)
+        | State.Pending when requested = Release.BeforeProvider ->
+            Decision.Transitioned(State.Releasing requested)
+        | State.Pending -> Decision.Rejected Rejection.IllegalTransition
         | State.Committed when requested = Release.PhysicalCompletion ->
             Decision.Transitioned(State.Releasing requested)
         | State.Committed -> Decision.Rejected Rejection.OppositeTerminalConflict
