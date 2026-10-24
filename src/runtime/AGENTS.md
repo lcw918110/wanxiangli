@@ -29,7 +29,7 @@ program 通过公开产物使用 runtime，是明确的永久单向基础依赖�
 
 ## SPEC
 
-1. [LEMMA 1, 4] `tests/001.test.mjs` 验证真实阻塞、SDK 结清、宿主响应、计算保护与取消；真实 `bun build --compile` 宿主必须通过 PATH 的独立 bun/node 解释器启动 worker，不能复用指向宿主自身的 `process.execPath`，无解释器须明确拒绝。
+1. [LEMMA 1, 4] `tests/001.test.mjs` 验证真实阻塞、SDK 结清、宿主响应、计算保护与取消；所有 Bun 宿主必须通过 PATH 的独立 bun/node 解释器启动 worker，不能复用可能指向宿主自身的 `process.execPath`，无解释器须明确拒绝。真实 `bun build --compile` 与 OpenCode 宿主分别验收。
 2. [LEMMA 1] `tests/004.test.mjs` 验证对象、错误、原型及延迟 then getter 的权限边界。
 3. [LEMMA 2, 7] `tests/003.test.mjs` 及迁入的 `files/tests/` 验证锚点、版本冲突、原子写、OS 路径、符号链接与硬链接。
 4. [LEMMA 3, 5, 6, 7] `tests/005.test.mjs`、`process/tests/`、`pty/tests/`、`spool/tests/`、`time/tests/` 验证真实资源、输出、物理期限与收尾。窗口到期留命令和物理期限到期处置分别断言。

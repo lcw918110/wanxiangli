@@ -1,11 +1,13 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { existsSync } from 'node:fs'
+import { existsSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 import childProcess from 'node:child_process'
 import { syncBuiltinESMExports } from 'node:module'
 import { ProcessSession } from 'wanxiangli/runtime'
 import { options, session, ready, closed, output, temporary } from './support.mjs'
+
+const baselineEnv = JSON.parse(childProcess.execFileSync(process.execPath, ['-e', 'console.log(JSON.stringify(process.env))'], { env: {}, encoding: 'utf8' }))
 
 function noSpawn(action) {
   const original = childProcess.spawn
@@ -26,8 +28,8 @@ test('SPEC[process-001] direct argv, explicit cwd and environment reach a real p
   assert.equal(state.failure, null)
   const report = JSON.parse(output(run).text)
   assert.deepEqual(report.args, args)
-  assert.equal(report.cwd, cwd)
-  assert.deepEqual(report.env, { ONLY_THIS: '确切值' })
+  assert.equal(report.cwd, realpathSync(cwd))
+  assert.deepEqual(report.env, { ...baselineEnv, ONLY_THIS: '确切值' })
   assert.equal(output(run, 'stderr').text, 'diagnostic\n')
 })
 
@@ -42,7 +44,7 @@ test('SPEC[process-001] environment property names are literal data, not prototy
   const env = Object.fromEntries([['__proto__', 'literal-value'], ['constructor', 'another-value'], ['EMPTY', '']])
   const run = session(t, 'report', [], { env })
   await closed(run)
-  assert.deepEqual(JSON.parse(output(run).text).env, env)
+  assert.deepEqual(JSON.parse(output(run).text).env, { ...baselineEnv, ...env })
 })
 
 test('SPEC[process-001] absent executable produces one failed start and no invented zero exit', async t => {

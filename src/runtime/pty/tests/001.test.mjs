@@ -1,6 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { Terminal } from '../../../../dist/runtime/Runtime.js'
 
 const base = { driver: () => { throw new Error('not reached') }, command: 'true', cwd: tmpdir(), cols: 80, rows: 24 }
@@ -20,14 +22,18 @@ test('SPEC[pty-001] invalid options are rejected before the driver is called', (
   assert.throws(() => Terminal())
 })
 
-test('SPEC[pty-001] a missing or non-directory cwd fails before spawning', () => {
+test('SPEC[pty-001] a missing or non-directory cwd fails before spawning', t => {
+  const directory = mkdtempSync(join(tmpdir(), 'wanxiangli-pty-cwd-'))
+  t.after(() => rmSync(directory, { recursive: true, force: true }))
+  const filePath = join(directory, 'file')
+  writeFileSync(filePath, '')
   let called = 0
   const driver = () => { called++ }
-  const missing = Terminal.open({ ...base, driver, cwd: '/nonexistent/wanxiangli-pty' })
+  const missing = Terminal.open({ ...base, driver, cwd: join(directory, 'missing') })
   assert.equal(missing.kind, 'Failed')
   assert.equal(missing.error.operation, 'cwd')
   assert.equal(missing.error.code, 'ENOENT')
-  const file = Terminal.open({ ...base, driver, cwd: '/etc/hostname' })
+  const file = Terminal.open({ ...base, driver, cwd: filePath })
   assert.equal(file.kind, 'Failed')
   assert.equal(file.error.code, 'ENOTDIR')
   assert.equal(called, 0)

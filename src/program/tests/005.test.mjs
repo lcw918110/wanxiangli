@@ -1,5 +1,5 @@
 import test from 'node:test';
-import {assert,harness,heldCommand,command,json,WAIT,file,exists,writeFile,readFile,join} from './fixtures.mjs';
+import {assert,harness,heldCommand,command,json,WAIT,file,exists,writeFile,readFile,join,settled} from './fixtures.mjs';
 
 test('SPEC[program-005] entry requires a non-empty planB before any program effect',async t=>{
   const h=await harness(t);
@@ -8,7 +8,12 @@ test('SPEC[program-005] entry requires a non-empty planB before any program effe
     assert.equal(r.state,'failed');assert.equal(r.code,'INVALID_ARGUMENT');
   }
   assert.equal(await exists(join(h.root,'invalid')),false);
-  assert.equal((await h.run('space','return true;',{}, {planB:' '})).state,'completed');
+  const admitted=await h.run('space','return true;',{}, {planB:' '});
+  assert.notEqual(admitted.code,'INVALID_ARGUMENT',json(admitted));
+  const completed=admitted.state==='parked'?await h.resume('space'):admitted;
+  const final=['completed','failed','abandoned'].includes(completed.state)?completed:await settled(h.session,'space');
+  assert.equal(final.state,'completed',json(final));
+  assert.equal(final.value,true);
 });
 
 test('SPEC[program-005] one expired unpark window stops caller and target without implicit second resume',{timeout:15000},async t=>{

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { existsSync,linkSync,lstatSync,mkdirSync,mkdtempSync,readFileSync,rmSync,symlinkSync,writeFileSync } from 'node:fs'
+import { existsSync,linkSync,lstatSync,mkdirSync,mkdtempSync,readFileSync,realpathSync,rmSync,symlinkSync,writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { FileSession } from '../../../dist/runtime/Runtime.js'
@@ -29,7 +29,7 @@ test('FileSession: audit keeps caller paths and read reports canonical path',t=>
   const before=[],after=[],reads=[],token={}
   const {files,path}=fixture(t,{before:m=>{before.push(m);return token},after:(m,v)=>after.push({m,v}),read:(absolute,text)=>reads.push({absolute,text})})
   mkdirSync(path('nested'));writeFileSync(path('nested/a'),'old');ok(files.cat('nested/a'));ok(files.write('nested/a','new'))
-  assert.deepEqual(reads,[{absolute:path('nested/a'),text:'old'}]);assert.equal(before.length,1)
+  assert.deepEqual(reads,[{absolute:realpathSync(path('nested/a')),text:'old'}]);assert.equal(before.length,1)
   assert.equal(before[0].path,'nested/a');assert.equal(before[0].originalText,'old');assert.equal(before[0].newText,'new')
   assert.equal(after.length,1);assert.equal(after[0].m.path,'nested/a');assert.equal(after[0].v,token)
   assert.equal(readFileSync(path('nested/a'),'utf8'),'new')

@@ -15,7 +15,7 @@ test('SPEC[assembly-002] NotWritten discards the candidate without a half-retire
   assert.equal(result.result, null)
   rig.journal.append = append
   assert.deepEqual(rig.work.inspect(), before)
-  assert.equal(rig.commit(command).kind, 'Relayed')
+  assert.equal(rig.commit(command).kind, 'Promoted')
 })
 
 for (const afterWrite of [false, true]) {
@@ -66,14 +66,15 @@ for (const acknowledgement of [null, {}, { status: 'Committed', revision: -1, re
   test(`SPEC[assembly-002] malformed acknowledgement ${JSON.stringify(acknowledgement)} never publishes the candidate`, t => {
     const rig = new Rig(t)
     rig.open()
-    const command = { type: 'Review', incumbencyId: rig.work.inspect().active.id, reviewerId: 'reviewer', findings: [] }
+    const command = { type: 'Review', incumbencyId: rig.work.inspect().active.id, reviewerId: 'reviewer', updates: [] }
     const append = rig.journal.append.bind(rig.journal)
     rig.journal.append = (...args) => { append(...args); return acknowledgement }
     const reply = rig.call(command)
     assert.equal(reply.status, 'Unknown')
     assert.equal(reply.result, null)
     assert.equal(rig.work.recover().next, 'ObserveCommit')
-    assert.equal(rig.reopen().inspect().stage, 'S2')
+    assert.equal(rig.reopen().inspect().stage, 'S1')
+    assert.equal(rig.reopen().inspect().active.reviewOutcome, 'Promoted')
   })
 }
 
@@ -81,7 +82,7 @@ test('SPEC[assembly-002] a false replay acknowledgement cannot substitute anothe
   const rig = new Rig(t)
   rig.open()
   rig.journal.append = () => ({ status: 'Replayed', revision: 1, reason: null })
-  const reply = rig.call({ type: 'Review', incumbencyId: rig.work.inspect().active.id, reviewerId: 'reviewer', findings: [] })
+  const reply = rig.call({ type: 'Review', incumbencyId: rig.work.inspect().active.id, reviewerId: 'reviewer', updates: [] })
   assert.equal(reply.status, 'Unknown')
   assert.equal(reply.result, null)
   assert.equal(rig.reopen().inspect().active.reviewOutcome, null)
@@ -100,7 +101,7 @@ test('SPEC[assembly-002] valid storage bytes with invalid domain history are rej
 test('SPEC[assembly-003] a synchronous append callback cannot reenter the same composition', t => {
   const rig = new Rig(t)
   rig.open()
-  const command = { type: 'Review', incumbencyId: rig.work.inspect().active.id, reviewerId: 'reviewer', findings: [] }
+  const command = { type: 'Review', incumbencyId: rig.work.inspect().active.id, reviewerId: 'reviewer', updates: [] }
   const append = rig.journal.append.bind(rig.journal)
   rig.journal.append = (...args) => {
     assert.throws(() => rig.call(command, 'nested'), /reentrant/)
@@ -109,7 +110,8 @@ test('SPEC[assembly-003] a synchronous append callback cannot reenter the same c
     return append(...args)
   }
   assert.equal(rig.call(command, 'outer').status, 'Committed')
-  assert.equal(rig.work.inspect().stage, 'S2')
+  assert.equal(rig.work.inspect().stage, 'S1')
+  assert.equal(rig.work.inspect().active.reviewOutcome, 'Promoted')
 })
 
 test('SPEC[assembly-003] request mutation during a race does not change the correlated replay', t => {

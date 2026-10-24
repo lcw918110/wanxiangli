@@ -35,8 +35,8 @@ export class Rig {
   open() {
     return this.commit({ type: 'Open', root: '组合验收', sequence: this.sequence, ownerId: 'manager', openingCursor: 0 }, 'open')
   }
-  review(findings = []) {
-    return this.commit({ type: 'Review', incumbencyId: this.work.inspect().active.id, reviewerId: 'reviewer', findings })
+  review(updates = []) {
+    return this.commit({ type: 'Review', incumbencyId: this.work.inspect().active.id, reviewerId: 'reviewer', updates })
   }
   delivery(overrides = {}) {
     const state = this.work.inspect()
@@ -47,7 +47,7 @@ export class Rig {
     this.open()
     for (let stage = 0; stage < 3; stage++) {
       this.review()
-      if (stage < 2) this.commit(this.delivery())
+      this.commit(this.delivery())
     }
   }
 }

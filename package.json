@@ -237,8 +237,6 @@
     "src/delegate-batch/index.d.ts",
     "src/fission-group/index.d.ts",
     "README.md",
-    "TRACE.md",
-    "OWNERSHIP.md",
     "THIRD_PARTY_NOTICES",
     "src/failure/index.d.ts",
     "src/failure-budget/index.d.ts",

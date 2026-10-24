@@ -18,7 +18,7 @@
 3. [AXIOM 3] 枚举遵守各级 `.gitignore` 与 `.git/info/exclude`、不进 `.git`、不跟随符号链接；`*` 不跨目录、`**` 跨零段或多段、`{a,b}` 展开。
 4. [AXIOM 2] 纯事务决策（单意图、目标存在性、快照新鲜度、preflight）只消费注入的数据事实（existing 数组、current 映射）；commit/rollback 计划按路径规范顺序确定。
 5. [AXIOM 2] 写盘前逐条校验当前内容等于预期；任一失败即按回滚计划还原已写文件（仅当磁盘仍是自己写入的内容时）。
-6. [AXIOM 3] `resolveBounded` 用 realpath 边界拦截 `..` 逃逸与指向根外的符号链接（`PATH_DENIED`）；`resolveToolPath` 保持主仓既有纯解析语义。
+6. [AXIOM 3] `resolveBounded` 与单目录枚举先确认输入的解析路径仍在根目录内，再以根目录和目标的 realpath 比较物理边界，拦截 `..` 逃逸与指向根外的符号链接（`PATH_DENIED`）。根目录自身或其祖先为符号链接时，合法内部路径仍可使用；`resolveToolPath` 保持主仓既有纯解析语义。
 7. [根 LEMMA 4] 结果形状为 JS 原生数据 `{ ok: true, value }` / `{ ok: false, code, reason }`；code 与主仓 `JsFailure.code` 同表，不暴露 F# union。
 
 ## SPEC

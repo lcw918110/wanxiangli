@@ -44,11 +44,15 @@ module MutationFs =
         let denied = failure "PATH_DENIED" ("path outside capability boundary: " + path)
 
         try
+            let realRoot = realpathSync resolvedRoot
+            let insideRealRoot (candidate: string) =
+                candidate = realRoot || candidate.StartsWith(realRoot + "/")
+
             let existing = firstExisting resolved
             let real = realpathSync existing
             let suffix = resolved.Substring(existing.Length)
 
-            if inside real && inside (real + suffix) then
+            if inside resolved && insideRealRoot real && insideRealRoot (real + suffix) then
                 Ok resolved
             else
                 Error denied

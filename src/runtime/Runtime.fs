@@ -32,7 +32,7 @@ let private nodeProcess: obj = importAll "node:process"
     if (!Number.isFinite(spec.executionBudgetMs) || spec.executionBudgetMs <= 0) throw errorWithCode('INVALID_EXECUTION_BUDGET', 'The execution budget must be positive and finite.');
     let executable = nodeProcess.execPath;
     let useBun = Boolean(nodeProcess.versions.bun);
-    if (typeof Bun !== 'undefined' && Bun.isStandaloneExecutable) {
+    if (useBun) {
       executable = Bun.which('bun');
       if (!executable) { executable = Bun.which('node'); useBun = false; }
       if (!executable) throw errorWithCode('PROGRAM_RUNTIME_UNAVAILABLE', 'Standalone Bun hosts need bun or node on PATH to execute isolated programs.');

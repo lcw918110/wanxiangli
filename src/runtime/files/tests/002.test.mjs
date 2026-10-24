@@ -82,6 +82,24 @@ test('SPEC[fs-002] empty pattern is refused with the stable invalid-pattern code
   assert.equal(result.code, 'INVALID_ANCHOR_PATTERN')
 })
 
+test('SPEC[fs-002] 符号链接根目录内的枚举合法，根外符号链接仍拒绝', t => {
+  const container = workspace(t)
+  const target = path.join(container, 'target')
+  const alias = path.join(container, 'alias')
+  mkdirSync(target)
+  symlinkSync(target, alias, 'dir')
+  write(target, 'keep.txt', 'x')
+  const api = fs(alias)
+  const listed = api.visibleEntries('.')
+  assert.equal(listed.ok, true, JSON.stringify(listed))
+  assert.deepEqual(listed.entries, [{ name: 'keep.txt', isDir: false }])
+  const outside = path.join(container, 'outside')
+  mkdirSync(outside)
+  symlinkSync(outside, path.join(target, 'escape'), 'dir')
+  assert.equal(api.visibleEntries('escape').code, 'PATH_DENIED')
+  assert.equal(api.visibleEntries('../outside').code, 'PATH_DENIED')
+})
+
 test('SPEC[fs-002] visibleEntries lists one directory sorted with isDir, respecting .gitignore, negation, nested rules, and .git/info/exclude', t => {
   const root = gitRoot(t)
   writeFileSync(path.join(root, '.git/info/exclude'), 'excluded.txt\n')

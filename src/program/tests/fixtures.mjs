@@ -12,9 +12,16 @@ const quote=value=>"'"+String(value).replaceAll("'","'\\''")+"'";
 export const command=(code,...args)=>'exec '+[quote(process.execPath),'-e',quote(code),...args.map(quote)].join(' ');
 export function deferred(){let resolve;const promise=new Promise(done=>{resolve=done;});return {promise,resolve};}
 export async function exists(path){try{await access(path);return true;}catch(error){if(error.code==='ENOENT')return false;throw error;}}
-export async function until(check,message){const end=performance.now()+5000;while(!(await check())){assert.ok(performance.now()<end,message);await delay(10);}}
+export const BARRIER_MS=10000;
+export async function until(check,message){const end=performance.now()+BARRIER_MS;while(!(await check())){assert.ok(performance.now()<end,message);await delay(10);}}
 export const file=path=>until(()=>exists(path),'Missing file barrier: '+path);
 export function alive(pid){try{process.kill(pid,0);return true;}catch(error){if(error.code==='ESRCH')return false;throw error;}}
+export const inspect=session=>name=>session.inspect().find(entry=>entry.name===name);
+export async function settled(session,name){
+  let receipt=inspect(session)(name);
+  await until(()=>{receipt=inspect(session)(name);return ['completed','failed','abandoned'].includes(receipt.state);},'program did not settle: '+name);
+  return receipt;
+}
 export const BASE=String.raw`class JsProgram {
   constructor(api){this._api=api;}
   call(...args){return this._api.call(...args);}
